@@ -1,0 +1,59 @@
+<!-- Bouton pour ouvrir la modale -->
+<button type="button" onclick="openModal()">Sélectionner des données</button>
+
+<!-- Modale -->
+<div id="selectionModal" style="display: none; position: fixed; top: 5%; left: 10%; width: 80%; height: 80%; background: white; border: 1px solid #ccc; padding: 20px; overflow: scroll; z-index: 9999;">
+  <h3>Sélectionner des données d'entraînement</h3>
+  <form id="selectionForm">
+    <table border="1">
+      <tr>
+        <th></th>
+        <th>#</th>
+        <th>Features</th>
+        <th>Label</th>
+      </tr>
+      {% for i in range(X_train_global.shape[0]) %}
+      <tr>
+        <td><input type="checkbox" name="sample" value="{{ i }}"></td>
+        <td>{{ i }}</td>
+        <td>{{ X_train_global[i] | join(', ') }}</td>
+        <td>{{ y_train_global[i] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <br>
+    <button type="button" onclick="submitSelection()">Valider</button>
+    <button type="button" onclick="closeModal()">Fermer</button>
+  </form>
+</div>
+
+<script>
+  function openModal() {
+    document.getElementById("selectionModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("selectionModal").style.display = "none";
+  }
+
+  function submitSelection() {
+    const selected = Array.from(document.querySelectorAll("input[name='sample']:checked"))
+                          .map(cb => cb.value)
+                          .join(",");
+
+    fetch("/select-data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "selected_indices=" + encodeURIComponent(selected)
+    }).then(response => {
+      if (response.ok) {
+        alert("Sélection enregistrée !");
+        closeModal();
+      } else {
+        alert("Erreur lors de la sélection.");
+      }
+    });
+  }
+</script>

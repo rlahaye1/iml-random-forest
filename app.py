@@ -12,6 +12,13 @@ import io
 app = Flask(__name__)
 app.config["TREE_IMG_FOLDER"] = "static/trees"
 
+# -------------global state----------------
+
+X_train_global = None
+y_train_global = None
+X_selected = None
+y_selected = None
+
 # ---------------- Utils ------------------
 
 def build_graphviz_png(node, filename):
@@ -38,8 +45,14 @@ def build_graphviz_png(node, filename):
 # ---------------- Load forest ------------------
 
 def load_forest():
+    global X_train_global, y_train_global
     data = load_iris()
     X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, random_state=42)
+
+    # Stocker pour l'affichage dans la modale
+    X_train_global = X_train
+    y_train_global = y_train
+
     forest = WeightedRandomForest()
     forest.fit(X_train, y_train, n_trees=6)
 
@@ -82,8 +95,22 @@ def index():
                            true_label=true_label,
                            total_trees=len(forest.trees),
                            per_page=n_per_page,
-                           X_test=X_test
+                           X_test=X_test,
+                           X_train_global=X_train_global,
+                           y_train_global=y_train_global
                            )
+
+
+@app.route("/select-data", methods=["POST"])
+def select_data():
+    global X_selected, y_selected, X_train_global, y_train_global
+
+    indices_str = request.form.get("selected_indices", "")
+    if indices_str:
+        indices = list(map(int, indices_str.split(",")))
+        X_selected = X_train_global[indices]
+        y_selected = y_train_global[indices]
+    return "OK"  # Peut aussi rediriger ou retourner un message de confirmation
 
 # ---------------- Run ------------------
 
