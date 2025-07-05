@@ -1,0 +1,27 @@
+<h3>Galerie des arbres (miniatures)</h3>
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+  {% for idx, tree in trees %}
+    <div style="text-align: center;">
+      <form method="get" action="/">
+        <input type="hidden" name="page" value="{{ idx }}">
+        <button type="submit" style="border: none; background: none;">
+          <img src="{{ url_for('static', filename='trees/tree_' ~ idx ~ '.png') }}" width="150" height="150" style="border: 1px solid #ccc;"/>
+        </button>
+      </form>
+      <p>Arbre {{ idx }}<br><small>Poids: {{ weights[idx] }}</small></p>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div style="margin-top: 20px;">
+  <form method="get" action="/">
+    {% if page > 0 %}
+      <button type="submit" name="page" value="{{ page - per_page }}">← Précédent</button>
+    {% endif %}
+    {% if page + per_page < total_trees %}
+      <button type="submit" name="page" value="{{ page + per_page }}">Suivant →</button>
+    {% endif %}
+  </form>
+</div>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualisation de Weighted Random Forest</title>
+</head>
+<body>
+  <h1>Visualisation de Weighted Random Forest</h1>
+
+   {% include "components/tree_gallery.html" %}
+
+  <hr>
+  <h2>Prédiction sur un échantillon test</h2>
+  <form method="get">
+    <label for="test_index">Choisir un index (0 à {{ X_test|length - 1 }}):</label>
+    <input type="number" id="test_index" name="test_index" value="{{ test_index }}" min="0" max="{{ X_test|length - 1 }}">
+    <input type="submit" value="Prédire">
+  </form>
+
+  <p>Vraie étiquette : {{ true_label }}</p>
+  <p><strong>Prédiction finale : {{ prediction }}</strong></p>
+</body>
+</html>
