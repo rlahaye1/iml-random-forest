@@ -1,0 +1,49 @@
+<!-- Bloc Prédiction Individuelle -->
+<div style="display: flex; gap: 40px; align-items: center; justify-content: center;">
+
+  <!-- Bloc prédiction individuelle -->
+  <div>
+    <h2>Prédiction sur un échantillon test</h2>
+    <form method="get">
+      <label for="test_index">Index (0 à {{ X_test|length - 1 }}):</label>
+      <input type="number" id="test_index" name="test_index" value="{{ test_index }}" min="0" max="{{ X_test|length - 1 }}">
+      <input type="submit" value="Prédire">
+    </form>
+    <p>Vraie étiquette : {{ true_label }}</p>
+    <p><strong>Prédiction finale : {{ prediction }}</strong></p>
+  </div>
+
+  <!-- Cercle de précision globale -->
+  {% if global_accuracy is not none %}
+  <div style="width: 150px; height: 150px; position: relative;">
+    <svg viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+      <path
+        d="M18 2.0845
+           a 15.9155 15.9155 0 0 1 0 31.831
+           a 15.9155 15.9155 0 0 1 0 -31.831"
+        fill="none"
+        stroke="#eee"
+        stroke-width="4"
+      />
+      <path
+        d="M18 2.0845
+           a 15.9155 15.9155 0 0 1 0 31.831"
+        fill="none"
+        stroke="{% if global_accuracy > 50 %}green{% else %}red{% endif %}"
+        stroke-width="4"
+        stroke-dasharray="{{ global_accuracy }}, 100"
+      />
+    </svg>
+    <div style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5em;
+      font-weight: bold;
+    ">
+      {{ global_accuracy }}%
+    </div>
+  </div>
+  {% endif %}
+</div>

@@ -1,5 +1,5 @@
 <!-- Bouton pour ouvrir la modale -->
-<button type="button" onclick="openModal()">Sélectionner des données</button>
+<button type="button" onclick="openModalDataSelector()">Sélectionner des données</button>
 
 <!-- Modale -->
 <div id="selectionModal" style="display: none; position: fixed; top: 5%; left: 10%; width: 80%; height: 80%; background: white; border: 1px solid #ccc; padding: 20px; overflow: scroll; z-index: 9999;">
@@ -23,16 +23,16 @@
     </table>
     <br>
     <button type="button" onclick="submitSelection()">Valider</button>
-    <button type="button" onclick="closeModal()">Fermer</button>
+    <button type="button" onclick="closeModalDataSelector()">Fermer</button>
   </form>
 </div>
 
 <script>
-  function openModal() {
+  function openModalDataSelector() {
     document.getElementById("selectionModal").style.display = "block";
   }
 
-  function closeModal() {
+  function closeModalDataSelector() {
     document.getElementById("selectionModal").style.display = "none";
   }
 
@@ -50,7 +50,7 @@
     }).then(response => {
       if (response.ok) {
         alert("Sélection enregistrée !");
-        closeModal();
+        closeModalDataSelector();
       } else {
         alert("Erreur lors de la sélection.");
       }

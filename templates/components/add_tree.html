@@ -1,0 +1,30 @@
+<!-- Bouton vert (affiché uniquement sur la dernière page) -->
+{% if page == n_pages - 1 %}
+  <button onclick="openModalAddTree()" style="background-color: green; color: white; font-size: 16px; padding: 10px 20px; border: none; border-radius: 5px;">
+    +
+  </button>
+{% endif %}
+
+<!-- Boîte modale -->
+<div id="addTreeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; width: 300px;">
+    <h3>Ajouter un arbre pondéré</h3>
+    {% include "components/data_selector.html" %}
+    <form method="post" action="/add-tree">
+      <input type="number" name="weight" step="0.1" placeholder="Entrez un poids" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+      <br>
+      <button type="submit" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Valider</button>
+      <button type="button" onclick="closeModalAddTree()" style="margin-left: 10px; background-color: gray; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Annuler</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModalAddTree() {
+    document.getElementById("addTreeModal").style.display = "flex";
+  }
+
+  function closeModalAddTree() {
+    document.getElementById("addTreeModal").style.display = "none";
+  }
+</script>

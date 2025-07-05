@@ -1,3 +1,4 @@
+from math import ceil
 from flask import Flask, render_template, request, send_from_directory
 import numpy as np
 import os
@@ -56,11 +57,6 @@ def load_forest():
     forest = WeightedRandomForest()
     forest.fit(X_train, y_train, n_trees=6)
 
-    X_subset = X_train[:10]
-    y_subset = y_train[:10]
-    important_tree = Tree()
-    forest.add_tree(important_tree, X_subset, y_subset, weight=5.0)
-
     return forest, X_test, y_test
 
 forest, X_test, y_test = load_forest()
@@ -84,10 +80,17 @@ def index():
     predictions = forest.predict(X_test[test_index].reshape(1, -1))
     true_label = y_test[test_index]
 
+    global_accuracy = None
+    if len(y_test) > 0:
+        y_pred_all = forest.predict(X_test)
+        correct = np.sum(y_pred_all == y_test)
+        total = len(y_test)
+        global_accuracy = round((correct / total) * 100)
+
     return render_template("index.html",
                            trees=list(enumerate(forest.trees))[start:end],
                            weights=forest.weights[start:end],
-                           n_pages=(len(forest.trees) + n_per_page - 1) // n_per_page,
+                           n_pages=ceil(len(forest.trees)/n_per_page),
                            page=page,
                            current_page=page,
                            test_index=test_index,
@@ -97,7 +100,8 @@ def index():
                            per_page=n_per_page,
                            X_test=X_test,
                            X_train_global=X_train_global,
-                           y_train_global=y_train_global
+                           y_train_global=y_train_global,
+                           global_accuracy=global_accuracy
                            )
 
 
@@ -111,6 +115,57 @@ def select_data():
         X_selected = X_train_global[indices]
         y_selected = y_train_global[indices]
     return "OK"  # Peut aussi rediriger ou retourner un message de confirmation
+
+
+@app.route("/add-tree", methods=["POST"])
+def add_tree():
+    global X_selected, y_selected, forest
+
+    weight_str = request.form.get("weight")
+    if not weight_str:
+        return "Poids non fourni", 400
+
+    if X_selected is None or y_selected is None:
+        return "Aucune donnée sélectionnée pour entraîner un arbre", 400
+
+    try:
+        weight = float(weight_str)
+    except ValueError:
+        return "Poids invalide", 400
+
+    # Créer un nouvel arbre pondéré
+    new_tree = Tree()
+    forest.add_tree(new_tree, X_selected, y_selected, weight=weight)
+
+    # Générer image pour ce nouvel arbre
+    new_index = len(forest.trees) - 1  # l’arbre a été ajouté à la fin
+    if hasattr(new_tree, "root"):
+        build_graphviz_png(new_tree.root, f"tree_{new_index}.png")
+
+    global_accuracy = None
+    if len(y_test) > 0:
+        y_pred_all = forest.predict(X_test)
+        correct = np.sum(y_pred_all == y_test)
+        total = len(y_test)
+        global_accuracy = round((correct / total) * 100)
+
+    return render_template("index.html",
+                           trees=list(enumerate(forest.trees))[-2:],  # dernière page
+                           weights=forest.weights[-2:],
+                           n_pages=ceil(len(forest.trees)/2),
+                           page=ceil(len(forest.trees)/2) - 1,
+                           current_page=ceil(len(forest.trees)/2) - 1,
+                           test_index=0,
+                           prediction=None,
+                           true_label=None,
+                           total_trees=len(forest.trees),
+                           per_page=2,
+                           X_test=X_test,
+                           X_train_global=X_train_global,
+                           y_train_global=y_train_global,
+                           global_accuracy=global_accuracy
+                           )
+
 
 # ---------------- Run ------------------
 

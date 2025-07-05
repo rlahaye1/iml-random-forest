@@ -1,27 +1,38 @@
 <h3>Galerie des arbres (miniatures)</h3>
 
-<div style="display: flex; gap: 20px; flex-wrap: wrap;">
-  {% for idx, tree in trees %}
-    <div style="text-align: center;">
-      <form method="get" action="/">
-        <input type="hidden" name="page" value="{{ idx }}">
-        <button type="submit" style="border: none; background: none;">
-          <img src="{{ url_for('static', filename='trees/tree_' ~ idx ~ '.png') }}" width="150" height="150" style="border: 1px solid #ccc;"/>
-        </button>
-      </form>
-      <p>Arbre {{ idx }}<br><small>Poids: {{ weights[idx] }}</small></p>
-    </div>
-  {% endfor %}
-</div>
+<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
 
-<!-- Pagination -->
-<div style="margin-top: 20px;">
-  <form method="get" action="/">
-    {% if page > 0 %}
-      <button type="submit" name="page" value="{{ page - per_page }}">← Précédent</button>
-    {% endif %}
-    {% if page + per_page < total_trees %}
-      <button type="submit" name="page" value="{{ page + per_page }}">Suivant →</button>
-    {% endif %}
-  </form>
+  <!-- Bouton Précédent (chevron gauche) -->
+  {% if page > 0 %}
+    <form method="get" action="/" style="margin: 0;">
+      <input type="hidden" name="page" value="{{ page - 1 }}">
+      <button type="submit" style="font-size: 24px; border: none; background: none;">&#x276E;</button>
+    </form>
+  {% endif %}
+
+  <!-- Les deux arbres affichés -->
+  <div style="display: flex; gap: 20px; flex-wrap: nowrap;">
+    {% for idx, tree in trees %}
+      <div style="text-align: center;">
+        <form method="get" action="/">
+          <input type="hidden" name="page" value="{{ current_page }}">
+          <button type="submit" style="border: none; background: none;">
+            <img src="{{ url_for('static', filename='trees/tree_' ~ idx ~ '.png') }}" width="150" height="150" style="border: 1px solid #ccc;"/>
+          </button>
+        </form>
+        <p>Arbre {{ idx }}<br><small>Poids: {{ weights[idx] }}</small></p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Bouton Suivant (chevron droit) -->
+  {% if page < n_pages-1 %}
+    <form method="get" action="/" style="margin: 0;">
+      <input type="hidden" name="page" value="{{ page + 1 }}">
+      <button type="submit" style="font-size: 24px; border: none; background: none;">&#x276F;</button>
+    </form>
+  {% endif %}
+
+  {% include "components/add_tree.html" %}
+
 </div>
