@@ -2,7 +2,7 @@ from math import ceil
 from flask import Flask, render_template, request, send_from_directory
 import numpy as np
 import os
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_wine, load_breast_cancer
 from sklearn.model_selection import train_test_split
 from WeightedRandomForest import WeightedRandomForest
 from Tree import Tree
@@ -21,6 +21,7 @@ X_selected = None
 y_selected = None
 current_n_trees = 6
 current_train_percent = 70
+current_dataset_selected = "iris"
 
 # ---------------- Utils ------------------
 
@@ -45,11 +46,28 @@ def build_graphviz_png(node, filename):
     image = Image.open(io.BytesIO(png_bytes))
     image.save(os.path.join(app.config["TREE_IMG_FOLDER"], filename))
 
+def clear_tree_images():
+    folder = app.config["TREE_IMG_FOLDER"]
+    for filename in os.listdir(folder):
+        if filename.startswith("tree_") and filename.endswith(".png"):
+            path = os.path.join(folder, filename)
+            try:
+                os.remove(path)
+            except Exception as e:
+                print(f"Erreur lors de la suppression de {path} : {e}")
+
 # ---------------- Load forest ------------------
 
-def load_forest(n_trees=6, train_size=0.3, test_size=0.7):
+def load_forest(n_trees=6, train_size=0.7, test_size=0.3, dataset="iris"):
     global X_train_global, y_train_global
-    data = load_iris()
+   
+    
+    if dataset == "iris":
+        data = load_iris()
+    elif dataset == "wine":
+        data = load_wine()
+    elif dataset == "cancer":
+        data = load_breast_cancer()
 
     X_train, X_test, y_train, y_test = train_test_split(
         data.data, data.target, train_size=train_size, test_size=test_size, random_state=42
@@ -71,24 +89,27 @@ forest, X_test, y_test = load_forest()
 @app.route("/")
 def index():
 
-    global forest, X_test, y_test, current_n_trees, current_train_percent
+    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected
 
     n_per_page = 2
+
     page = int(request.args.get("page", 0))
     test_index = int(request.args.get("test_index", 0))
     n_trees = int(request.args.get("n_trees", current_n_trees))
-
-    train_percent = int(request.args.get("train_percent", current_train_percent))  # ex: 30%
+    dataset_selected = request.args.get("dataset-select",current_dataset_selected)
+    train_percent = int(request.args.get("train_percent", current_train_percent))
 
     # Si les hyper-paramètres changent, on recharge la forêt
-    if current_n_trees != n_trees or current_train_percent != train_percent:
+    if current_n_trees != n_trees or current_train_percent != train_percent or current_dataset_selected != dataset_selected:
         train_size = train_percent / 100.0
-        test_size = 1 - train_size
+        # test_size = 1 - train_size
 
-        forest, X_test, y_test = load_forest(n_trees=n_trees, train_size=train_size, test_size=test_size)
+        forest, X_test, y_test = load_forest(n_trees=n_trees, train_size=train_size, dataset=dataset_selected)
 
         current_n_trees = n_trees
         current_train_percent = train_percent
+        current_dataset_selected = dataset_selected
+        clear_tree_images()
 
     start = page * n_per_page
     end = start + n_per_page
@@ -134,7 +155,8 @@ def index():
                            y_train_global=y_train_global,
                            global_accuracy=global_accuracy,
                            n_trees=n_trees,
-                           train_percent=train_percent
+                           train_percent=train_percent,
+                           dataset_selected=current_dataset_selected
                            )
 
 
@@ -152,7 +174,7 @@ def select_data():
 
 @app.route("/add-tree", methods=["POST"])
 def add_tree():
-    global X_selected, y_selected, forest
+    global X_selected, y_selected, forest, current_n_trees, current_train_percent, current_dataset_selected
 
     weight_str = request.form.get("weight")
     if not weight_str:
@@ -209,7 +231,10 @@ def add_tree():
                            X_test=X_test,
                            X_train_global=X_train_global,
                            y_train_global=y_train_global,
-                           global_accuracy=global_accuracy
+                           global_accuracy=global_accuracy,
+                           n_trees=current_n_trees,
+                           train_percent=current_train_percent,
+                           dataset_selected=current_dataset_selected
                            )
 
 

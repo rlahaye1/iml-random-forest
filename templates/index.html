@@ -3,14 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Visualisation de Weighted Random Forest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 p-6">
+ 
+
+  <h1 class="text-3xl font-bold mb-8">Visualisation de Weighted Random Forest</h1>
+
   {% include "components/hyperparams_form.html" %}
-  <h1>Visualisation de Weighted Random Forest</h1>
-    {% include "components/tree_gallery.html" %}
-  <hr>
+
+  {% include "components/tree_gallery.html" %}
+  <hr class="my-8 border-gray-300" />
 
   {% include "components/accuracy_check.html" %}
-
 </body>
 </html>

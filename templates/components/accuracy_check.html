@@ -1,22 +1,36 @@
 <!-- Bloc Prédiction Individuelle -->
-<div style="display: flex; gap: 40px; align-items: center; justify-content: center;">
+<div class="flex flex-wrap gap-10 items-center justify-center p-6">
 
   <!-- Bloc prédiction individuelle -->
-  <div>
-    <h2>Prédiction sur un échantillon test</h2>
-    <form method="get">
-      <label for="test_index">Index (0 à {{ X_test|length - 1 }}):</label>
-      <input type="number" id="test_index" name="test_index" value="{{ test_index }}" min="0" max="{{ X_test|length - 1 }}">
-      <input type="submit" value="Prédire">
+  <div class="max-w-sm w-full">
+    <h2 class="text-2xl font-semibold mb-4">Prédiction sur un échantillon test</h2>
+    <form method="get" class="space-y-4">
+      <label for="test_index" class="block text-gray-700 font-medium mb-1">
+        Index (0 à {{ X_test|length - 1 }}):
+      </label>
+      <input
+        type="number"
+        id="test_index"
+        name="test_index"
+        value="{{ test_index }}"
+        min="0"
+        max="{{ X_test|length - 1 }}"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+      >
+      <input
+        type="submit"
+        value="Prédire"
+        class="cursor-pointer bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+      >
     </form>
-    <p>Vraie étiquette : {{ true_label }}</p>
-    <p><strong>Prédiction finale : {{ prediction }}</strong></p>
+    <p class="mt-4 text-gray-800">Vraie étiquette : {{ true_label }}</p>
+    <p class="mt-2 font-bold text-lg">Prédiction finale : {{ prediction }}</p>
   </div>
 
   <!-- Cercle de précision globale -->
   {% if global_accuracy is not none %}
-  <div style="width: 150px; height: 150px; position: relative;">
-    <svg viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+  <div class="relative w-40 h-40 flex items-center justify-center">
+    <svg viewBox="0 0 36 36" class="transform -rotate-90 w-40 h-40">
       <path
         d="M18 2.0845
            a 15.9155 15.9155 0 0 1 0 31.831
@@ -29,19 +43,12 @@
         d="M18 2.0845
            a 15.9155 15.9155 0 0 1 0 31.831"
         fill="none"
-        stroke="{% if global_accuracy > 50 %}green{% else %}red{% endif %}"
+        stroke="{% if global_accuracy > 50 %}#16a34a{% else %}#dc2626{% endif %}"  <!-- Vert ou rouge Tailwind -->
         stroke-width="4"
         stroke-dasharray="{{ global_accuracy }}, 100"
       />
     </svg>
-    <div style="
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.5em;
-      font-weight: bold;
-    ">
+    <div class="absolute inset-0 flex items-center justify-center text-2xl font-bold">
       {{ global_accuracy }}%
     </div>
   </div>

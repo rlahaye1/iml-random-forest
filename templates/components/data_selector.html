@@ -1,30 +1,75 @@
 <!-- Bouton pour ouvrir la modale -->
-<button type="button" onclick="openModalDataSelector()">Sélectionner des données</button>
+<button
+  type="button"
+  onclick="openModalDataSelector()"
+  class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+>
+  Sélectionner des données
+</button>
 
 <!-- Modale -->
-<div id="selectionModal" style="display: none; position: fixed; top: 5%; left: 10%; width: 80%; height: 80%; background: white; border: 1px solid #ccc; padding: 20px; overflow: scroll; z-index: 9999;">
-  <h3>Sélectionner des données d'entraînement</h3>
-  <form id="selectionForm">
-    <table border="1">
-      <tr>
-        <th></th>
-        <th>#</th>
-        <th>Features</th>
-        <th>Label</th>
-      </tr>
-      {% for i in range(X_train_global.shape[0]) %}
-      <tr>
-        <td><input type="checkbox" name="sample" value="{{ i }}"></td>
-        <td>{{ i }}</td>
-        <td>{{ X_train_global[i] | join(', ') }}</td>
-        <td>{{ y_train_global[i] }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    <br>
-    <button type="button" onclick="submitSelection()">Valider</button>
-    <button type="button" onclick="closeModalDataSelector()">Fermer</button>
-  </form>
+<div
+  id="selectionModal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white w-11/12 max-w-6xl max-h-[80vh] rounded-lg p-6 overflow-auto shadow-xl relative">
+    
+    <h3 class="text-xl font-semibold mb-4 text-gray-800">Sélectionner des données d'entraînement</h3>
+
+    <form id="selectionForm">
+      <div class="overflow-auto border rounded">
+        <table class="min-w-full text-sm text-left border border-gray-300">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border-b"></th>
+              <th class="p-2 border-b">#</th>
+              <th class="p-2 border-b">Features</th>
+              <th class="p-2 border-b">Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(X_train_global.shape[0]) %}
+            <tr class="hover:bg-gray-50">
+              <td class="p-2 border-b">
+                <input type="checkbox" name="sample" value="{{ i }}">
+              </td>
+              <td class="p-2 border-b text-gray-600">{{ i }}</td>
+              <td class="p-2 border-b text-gray-700">{{ X_train_global[i] | join(', ') }}</td>
+              <td class="p-2 border-b text-gray-700">{{ y_train_global[i] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-4">
+        <button
+          type="button"
+          onclick="submitSelection()"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+        >
+          Valider
+        </button>
+        <button
+          type="button"
+          onclick="closeModalDataSelector()"
+          class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+        >
+          Fermer
+        </button>
+      </div>
+    </form>
+
+    <!-- Bouton fermer (croix) -->
+    <button
+      type="button"
+      onclick="closeModalDataSelector()"
+      class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"
+      aria-label="Fermer"
+    >
+      &times;
+    </button>
+  </div>
 </div>
 
 <script>

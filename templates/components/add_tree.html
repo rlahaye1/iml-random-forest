@@ -1,14 +1,28 @@
 <!-- Bouton vert (affiché uniquement sur la dernière page) -->
 {% if page == n_pages - 1 %}
-  <button onclick="openModalAddTree()" style="background-color: green; color: white; font-size: 16px; padding: 10px 20px; border: none; border-radius: 5px;">
-    +
-  </button>
+<button
+  onclick="openModalAddTree()"
+  style="background: transparent; border: none; padding: 0; cursor: pointer;"
+  aria-label="Ajouter"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    style="width: 48px; height: 48px; color: green;"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    stroke-width="2"
+  >
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+  </svg>
+</button>
+
 {% endif %}
 
 <!-- Boîte modale -->
 <div id="addTreeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
   <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; width: 300px;">
-    <h3>Ajouter un arbre pondéré</h3>
+    <h3 class="text-xl font-semibold mb-4 text-gray-800">Ajouter un arbre pondéré</h3>
     {% include "components/data_selector.html" %}
     <form method="post" action="/add-tree">
       <input type="number" name="weight" step="0.1" placeholder="Entrez un poids" required style="width: 100%; padding: 10px; margin-bottom: 15px;">

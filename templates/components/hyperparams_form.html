@@ -1,11 +1,64 @@
-<h2>Configurer les hyperparamètres</h2>
-<form method="get" action="/">
-  <label>Nombre d'arbres :</label>
-  <input type="number" name="n_trees" min="1" max="100" value="{{ n_trees }}" required><br><br>
 
-  <label>% pour l'entraînement (1 à 99%) :</label>
-  <input type="number" name="train_percent" min="1" max="99" value="{{ train_percent }}" required><br><br>
+<div class="w-full bg-white rounded shadow py-6"
+     style="max-width: none;">
+  <div class="max-w-7xl mx-auto mb-2 px-6">
 
-  <input type="submit" value="Recharger la forêt" style="padding: 8px 16px;">
-</form>
-<hr>
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">Configuration de la forêt d’arbres</h2>
+
+    <form method="get" action="/" class="grid grid-cols-2 gap-6">
+
+      <!-- Bloc 1 -->
+      <div class="flex flex-col">
+        <label for="n_trees" class="mb-2 font-medium text-gray-700">Nombre d'arbres :</label>
+        <input
+          type="number"
+          id="n_trees"
+          name="n_trees"
+          min="1"
+          max="100"
+          value="{{ n_trees }}"
+          class="border border-gray-300 rounded px-3 py-1 max-w-xs"
+        />
+      </div>
+
+      <!-- Bloc 2 -->
+      <div class="flex flex-col">
+        <label for="train_percent" class="mb-2 font-medium text-gray-700">Pourcentage pour l'entraînement (1 à 99%) :</label>
+        <input
+          type="number"
+          id="train_percent"
+          name="train_percent"
+          min="1"
+          max="99"
+          value="{{ train_percent }}"
+          class="border border-gray-300 rounded px-3 py-1 max-w-xs"
+        />
+      </div>
+
+      <!-- Bloc 3 -->
+      <div class="flex flex-col">
+        <label for="dataset-select" class="mb-2 font-medium text-gray-700">Dataset :</label>
+        <select
+          id="dataset-select"
+          name="dataset-select"
+          class="border border-gray-300 rounded px-3 py-1 max-w-xs"
+        >
+          <option value="iris" {% if dataset_selected == "iris" %}selected{% endif %}>Iris</option>
+          <option value="wine" {% if dataset_selected == "wine" %}selected{% endif %}>Wine</option>
+          <option value="cancer" {% if dataset_selected == "cancer" %}selected{% endif %}>Cancer</option>
+        </select>
+      </div>
+
+      <!-- Bloc 4 -->
+      <div class="flex items-end">
+        <button
+          type="submit"
+          class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition w-full max-w-xs"
+        >
+          Appliquer
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
