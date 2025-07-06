@@ -19,6 +19,8 @@ X_train_global = None
 y_train_global = None
 X_selected = None
 y_selected = None
+current_n_trees = 6
+current_train_percent = 70
 
 # ---------------- Utils ------------------
 
@@ -45,17 +47,20 @@ def build_graphviz_png(node, filename):
 
 # ---------------- Load forest ------------------
 
-def load_forest():
+def load_forest(n_trees=6, train_size=0.3, test_size=0.7):
     global X_train_global, y_train_global
     data = load_iris()
-    X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, random_state=42)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data.data, data.target, train_size=train_size, test_size=test_size, random_state=42
+    )
 
     # Stocker pour l'affichage dans la modale
     X_train_global = X_train
     y_train_global = y_train
 
     forest = WeightedRandomForest()
-    forest.fit(X_train, y_train, n_trees=6)
+    forest.fit(X_train, y_train, n_trees=n_trees)
 
     return forest, X_test, y_test
 
@@ -65,9 +70,26 @@ forest, X_test, y_test = load_forest()
 
 @app.route("/")
 def index():
+
+    global forest, X_test, y_test, current_n_trees, current_train_percent
+
     n_per_page = 2
     page = int(request.args.get("page", 0))
     test_index = int(request.args.get("test_index", 0))
+    n_trees = int(request.args.get("n_trees", current_n_trees))
+
+    train_percent = int(request.args.get("train_percent", current_train_percent))  # ex: 30%
+
+    # Si les hyper-paramètres changent, on recharge la forêt
+    if current_n_trees != n_trees or current_train_percent != train_percent:
+        train_size = train_percent / 100.0
+        test_size = 1 - train_size
+
+        forest, X_test, y_test = load_forest(n_trees=n_trees, train_size=train_size, test_size=test_size)
+
+        current_n_trees = n_trees
+        current_train_percent = train_percent
+
     start = page * n_per_page
     end = start + n_per_page
 
@@ -87,9 +109,18 @@ def index():
         total = len(y_test)
         global_accuracy = round((correct / total) * 100)
 
+
+    trees_paginated = [
+        {
+            "index": i,
+            "tree": forest.trees[i],
+            "weight": forest.weights[i]
+        }
+        for i in range(start, min(end, len(forest.trees)))
+    ]
+
     return render_template("index.html",
-                           trees=list(enumerate(forest.trees))[start:end],
-                           weights=forest.weights[start:end],
+                            trees_paginated=trees_paginated,
                            n_pages=ceil(len(forest.trees)/n_per_page),
                            page=page,
                            current_page=page,
@@ -101,7 +132,9 @@ def index():
                            X_test=X_test,
                            X_train_global=X_train_global,
                            y_train_global=y_train_global,
-                           global_accuracy=global_accuracy
+                           global_accuracy=global_accuracy,
+                           n_trees=n_trees,
+                           train_percent=train_percent
                            )
 
 
@@ -133,14 +166,28 @@ def add_tree():
     except ValueError:
         return "Poids invalide", 400
 
-    # Créer un nouvel arbre pondéré
     new_tree = Tree()
     forest.add_tree(new_tree, X_selected, y_selected, weight=weight)
 
-    # Générer image pour ce nouvel arbre
-    new_index = len(forest.trees) - 1  # l’arbre a été ajouté à la fin
+    new_index = len(forest.trees) - 1
     if hasattr(new_tree, "root"):
         build_graphviz_png(new_tree.root, f"tree_{new_index}.png")
+
+    # recalculer pagination pour afficher dernière page
+    n_per_page = 2
+    total_trees = len(forest.trees)
+    last_page = ceil(total_trees / n_per_page) - 1
+    start = last_page * n_per_page
+    end = start + n_per_page
+
+    trees_paginated = [
+        {
+            "index": i,
+            "tree": forest.trees[i],
+            "weight": forest.weights[i]
+        }
+        for i in range(start, min(end, total_trees))
+    ]
 
     global_accuracy = None
     if len(y_test) > 0:
@@ -150,16 +197,15 @@ def add_tree():
         global_accuracy = round((correct / total) * 100)
 
     return render_template("index.html",
-                           trees=list(enumerate(forest.trees))[-2:],  # dernière page
-                           weights=forest.weights[-2:],
-                           n_pages=ceil(len(forest.trees)/2),
-                           page=ceil(len(forest.trees)/2) - 1,
-                           current_page=ceil(len(forest.trees)/2) - 1,
+                           trees_paginated=trees_paginated,
+                           n_pages=ceil(total_trees / n_per_page),
+                           page=last_page,
+                           current_page=last_page,
                            test_index=0,
                            prediction=None,
                            true_label=None,
-                           total_trees=len(forest.trees),
-                           per_page=2,
+                           total_trees=total_trees,
+                           per_page=n_per_page,
                            X_test=X_test,
                            X_train_global=X_train_global,
                            y_train_global=y_train_global,

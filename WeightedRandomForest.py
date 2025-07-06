@@ -13,6 +13,8 @@ class WeightedRandomForest:
         Initialise n arbres entraînés chacun sur un échantillon bootstrapé (tiré aléatoirement)
         de X, y avec la classe Tree.
         """
+        self.classes_ = np.unique(y)
+
         for _ in range(n_trees):
             # Tirage aléatoire avec remplacement
             X_sample, y_sample = resample(X, y)
@@ -20,33 +22,41 @@ class WeightedRandomForest:
             self.add_tree(tree, X_sample, y_sample, weight=1.0)
 
     def add_tree(self, tree, X=None, y=None, weight=1.0):
-        # Si les données sont fournies, on entraîne l'arbre
         if X is not None and y is not None:
             tree.fit(X, y)
-
-        # On s'assure que l'arbre peut prédire les probabilités
-        if not hasattr(tree, "predict_proba"):
-            raise ValueError("Le tree doit avoir une méthode predict_proba")
-
-        # On stocke les classes lors du premier ajout
-        if self.classes_ is None:
-            self.classes_ = tree.classes_
-        else:
-            # Vérifie que les classes sont les mêmes
-            if not np.array_equal(self.classes_, tree.classes_):
-                raise ValueError("Les classes de l'arbre ne correspondent pas à celles déjà présentes.")
+            tree.classes_ = self.classes_
 
         self.trees.append(tree)
         self.weights.append(weight)
 
+
+    # def predict_proba(self, X):
+    #     if not self.trees:
+    #         raise ValueError("Aucun arbre n'a été ajouté à la forêt.")
+    #     total_weight = sum(self.weights)
+    #     probas = np.zeros((X.shape[0], len(self.classes_)))
+
+    #     for tree, weight in zip(self.trees, self.weights):
+    #         probas += weight * tree.predict_proba(X)
+
+    #     return probas / total_weight
+    
     def predict_proba(self, X):
         if not self.trees:
             raise ValueError("Aucun arbre n'a été ajouté à la forêt.")
+
         total_weight = sum(self.weights)
         probas = np.zeros((X.shape[0], len(self.classes_)))
 
         for tree, weight in zip(self.trees, self.weights):
-            probas += weight * tree.predict_proba(X)
+            local_proba = tree.predict_proba(X)
+            aligned_proba = np.zeros((X.shape[0], len(self.classes_)))
+
+            for i, cls in enumerate(tree.classes_):
+                col_index = np.where(self.classes_ == cls)[0][0]
+                aligned_proba[:, col_index] = local_proba[:, i]
+
+            probas += weight * aligned_proba
 
         return probas / total_weight
 

@@ -1,0 +1,11 @@
+<h2>Configurer les hyperparamètres</h2>
+<form method="get" action="/">
+  <label>Nombre d'arbres :</label>
+  <input type="number" name="n_trees" min="1" max="100" value="{{ n_trees }}" required><br><br>
+
+  <label>% pour l'entraînement (1 à 99%) :</label>
+  <input type="number" name="train_percent" min="1" max="99" value="{{ train_percent }}" required><br><br>
+
+  <input type="submit" value="Recharger la forêt" style="padding: 8px 16px;">
+</form>
+<hr>

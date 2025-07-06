@@ -10,20 +10,25 @@
     </form>
   {% endif %}
 
+  {% for item in trees %}
+  Arbre {{ item.index }}<br>
+  <small>Poids : {{ item.weight }}</small>
+{% endfor %}
+
   <!-- Les deux arbres affichés -->
-  <div style="display: flex; gap: 20px; flex-wrap: nowrap;">
-    {% for idx, tree in trees %}
-      <div style="text-align: center;">
-        <form method="get" action="/">
-          <input type="hidden" name="page" value="{{ current_page }}">
-          <button type="submit" style="border: none; background: none;">
-            <img src="{{ url_for('static', filename='trees/tree_' ~ idx ~ '.png') }}" width="150" height="150" style="border: 1px solid #ccc;"/>
-          </button>
-        </form>
-        <p>Arbre {{ idx }}<br><small>Poids: {{ weights[idx] }}</small></p>
-      </div>
-    {% endfor %}
-  </div>
+<div style="display: flex; gap: 20px; flex-wrap: nowrap;">
+  {% for item in trees_paginated %}
+    <div style="text-align: center;">
+      <form method="get" action="/">
+        <input type="hidden" name="page" value="{{ current_page }}">
+        <button type="submit" style="border: none; background: none;">
+          <img src="{{ url_for('static', filename='trees/tree_' ~ item.index ~ '.png') }}" width="150" height="150" style="border: 1px solid #ccc;"/>
+        </button>
+      </form>
+      <p>Arbre {{ item.index }}<br><small>Poids: {{ item.weight }}</small></p>
+    </div>
+  {% endfor %}
+</div>
 
   <!-- Bouton Suivant (chevron droit) -->
   {% if page < n_pages-1 %}
