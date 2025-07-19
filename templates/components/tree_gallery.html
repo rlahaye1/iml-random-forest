@@ -1,4 +1,14 @@
+
+
 <h3 class="text-xl font-semibold mb-4 text-gray-800 mt-4">Galerie des arbres</h3>
+
+<form method="get" action="/" class="mb-4 flex items-center gap-4">
+  <label for="accuracy" class="text-gray-700 font-medium">Accuracy maximale :</label>
+  <input type="number" step="0.1" name="max_accuracy" id="accuracy" min="0" max="100"
+         value="{{ request.args.get('max_accuracy', 100) }}"
+         class="border rounded px-3 py-1 w-24 text-right text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+  <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition">Filtrer</button>
+</form>
 
 <div class="flex items-center justify-center gap-6">
 
@@ -6,6 +16,8 @@
   {% if page > 0 %}
   <form method="get" action="/" class="m-0">
     <input type="hidden" name="page" value="{{ page - 1 }}">
+    <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
+
     <button type="submit" 
             class="text-3xl text-gray-600 hover:text-gray-900 transition p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Page précédente">
@@ -35,6 +47,7 @@
         </form>
         <p class="mt-2 text-gray-700 font-semibold">Arbre {{ item.index }}</p>
         <p class="text-sm text-gray-500">Poids : {{ item.weight }}</p>
+        <p class="text-sm text-green-600 font-medium">Accuracy : {{ item.accuracies }} %</p>
       </div>
       <div class="mt-4 text-sm text-left text-gray-700">
         <h4 class="font-semibold mb-2 text-gray-800">Features utilisées</h4>
@@ -53,6 +66,8 @@
   {% if page < n_pages-1 %}
   <form method="get" action="/" class="m-0">
     <input type="hidden" name="page" value="{{ page + 1 }}">
+    <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
+
     <button type="submit" 
             class="text-3xl text-gray-600 hover:text-gray-900 transition p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Page suivante">

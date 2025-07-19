@@ -7,6 +7,8 @@ class WeightedRandomForest:
         self.trees = []
         self.weights = []
         self.classes_ = None  # pour garder une référence commune
+        self.per_tree_preds = []
+        self.accuracy= []
 
     def fit(self, X, y, n_trees=10):
         """
@@ -47,6 +49,7 @@ class WeightedRandomForest:
 
         total_weight = sum(self.weights)
         probas = np.zeros((X.shape[0], len(self.classes_)))
+        self.per_tree_preds = []
 
         for tree, weight in zip(self.trees, self.weights):
             local_proba = tree.predict_proba(X)
@@ -55,6 +58,9 @@ class WeightedRandomForest:
             for i, cls in enumerate(tree.classes_):
                 col_index = np.where(self.classes_ == cls)[0][0]
                 aligned_proba[:, col_index] = local_proba[:, i]
+        
+            preds_tree = self.classes_[np.argmax(aligned_proba, axis=1)]
+            self.per_tree_preds.append(preds_tree)
 
             probas += weight * aligned_proba
 
