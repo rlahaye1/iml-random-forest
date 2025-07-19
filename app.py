@@ -2,7 +2,7 @@ from math import ceil
 from flask import Flask, render_template, request, send_from_directory
 import numpy as np
 import os
-from sklearn.datasets import load_iris, load_wine, load_breast_cancer
+from sklearn.datasets import load_iris, load_wine, load_breast_cancer, fetch_california_housing 
 from sklearn.model_selection import train_test_split
 from WeightedRandomForest import WeightedRandomForest
 from Tree import Tree
@@ -21,7 +21,8 @@ X_selected = None
 y_selected = None
 current_n_trees = 6
 current_train_percent = 70
-current_dataset_selected = "iris"
+current_dataset_selected = "california"
+selected_features = None
 
 # ---------------- Utils ------------------
 
@@ -58,8 +59,8 @@ def clear_tree_images():
 
 # ---------------- Load forest ------------------
 
-def load_forest(n_trees=6, train_size=0.7, dataset="iris"):
-    global X_train_global, y_train_global
+def load_forest(n_trees=6, train_size=0.7, dataset="california"):
+    global X_train_global, y_train_global, feature_names
    
     # test_size = 1-train_size
     if dataset == "iris":
@@ -68,6 +69,19 @@ def load_forest(n_trees=6, train_size=0.7, dataset="iris"):
         data = load_wine()
     elif dataset == "cancer":
         data = load_breast_cancer()
+    elif dataset == "california":
+        data_raw = fetch_california_housing()
+        X = data_raw.data
+        y_cont = data_raw.target  
+        median = np.median(y_cont)
+        y = (y_cont > median).astype(int)
+        data = type('obj', (object,), {
+            'data': X,
+            'target': y,
+            'feature_names': data_raw.feature_names
+        })()
+
+    feature_names = data.feature_names
 
     X_train, X_test, y_train, y_test = train_test_split(
         data.data, data.target, train_size=train_size, random_state=42
@@ -89,7 +103,7 @@ forest, X_test, y_test = load_forest()
 @app.route("/")
 def index():
 
-    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected
+    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected, feature_names
 
     n_per_page = 2
 
@@ -156,7 +170,8 @@ def index():
                            global_accuracy=global_accuracy,
                            n_trees=n_trees,
                            train_percent=train_percent,
-                           dataset_selected=current_dataset_selected
+                           dataset_selected=current_dataset_selected,
+                           feature_names=feature_names
                            )
 
 
@@ -174,7 +189,9 @@ def select_data():
 
 @app.route("/add-tree", methods=["POST"])
 def add_tree():
-    global X_selected, y_selected, forest, current_n_trees, current_train_percent, current_dataset_selected
+    global X_selected, y_selected, forest, current_n_trees, current_train_percent, current_dataset_selected, selected_features, feature_names
+
+    # selected_feature = request.args.get("selected-feature",current_dataset_selected)
 
     weight_str = request.form.get("weight")
     if not weight_str:
@@ -189,7 +206,7 @@ def add_tree():
         return "Poids invalide", 400
 
     new_tree = Tree()
-    forest.add_tree(new_tree, X_selected, y_selected, weight=weight)
+    forest.add_tree(new_tree, X_selected, y_selected, weight=weight, forced_features=selected_features)
 
     new_index = len(forest.trees) - 1
     if hasattr(new_tree, "root"):
@@ -234,8 +251,20 @@ def add_tree():
                            global_accuracy=global_accuracy,
                            n_trees=current_n_trees,
                            train_percent=current_train_percent,
-                           dataset_selected=current_dataset_selected
+                           dataset_selected=current_dataset_selected,
+                           feature_names=feature_names
                            )
+
+
+@app.route("/select-features", methods=["POST"])
+def select_features():
+    global selected_features
+    indices_str = request.form.get("selected_features", "")
+    if indices_str:
+        selected_features = list(map(int, indices_str.split(",")))
+    else:
+        selected_features = None
+    return "OK"
 
 
 # ---------------- Run ------------------

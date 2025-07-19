@@ -24,6 +24,8 @@
   <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; width: 300px;">
     <h3 class="text-xl font-semibold mb-4 text-gray-800">Ajouter un arbre pondéré</h3>
     {% include "components/data_selector.html" %}
+
+    {% include "components/feature_selector.html" %}
     <form method="post" action="/add-tree">
       <input type="number" name="weight" step="0.1" placeholder="Entrez un poids" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
       <br>

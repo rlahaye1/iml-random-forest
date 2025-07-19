@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import math
 from TreeNode import TreeNode
 
 class Tree:
@@ -18,16 +20,29 @@ class Tree:
         self.specific_splits = {}  # ex: {0: 1.5, 2: 3.2} => impose des seuils sur certaines features
         # self.recalculation_nodes = {}  # ex: {'path': node} pour recalculer un sous-arbre
         # self.nodes_by_feature = {}  # ex: {feature_index: [TreeNode, TreeNode, ...]}
+        self.selected_features = None
 
-    def fit(self, X, y):
+    def fit(self, X, y, forced_features=None):
         """
         Point de départ : construction de l'arbre depuis la racine.
-        - X : matrice d'entrée des features
+        - X : matrice d'entrée des features (numpy array ou pandas DataFrame)
         - y : vecteur des classes
+        - forced_features : liste d'indices de features à forcer (ex: [0, 2, 3])
         """
         self.classes_ = np.unique(y)
-        n_features = np.array(X).shape[1]
-        self.root = self._build_tree(np.array(X), np.array(y), available_features=list(range(n_features)))
+        n_features = X.shape[1]
+
+        if forced_features is not None:
+            self.selected_features = forced_features
+        else:
+            n_to_select =  max(1, int(math.sqrt(n_features)))
+            self.selected_features = random.sample(range(n_features), n_to_select)
+
+        self.root = self._build_tree(
+            np.array(X),
+            np.array(y),
+            available_features=self.selected_features
+        )
 
     def _build_tree(self, X, y, depth=0, available_features=None):
         """

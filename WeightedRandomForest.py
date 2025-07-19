@@ -21,9 +21,9 @@ class WeightedRandomForest:
             tree = Tree()
             self.add_tree(tree, X_sample, y_sample, weight=0.1)
 
-    def add_tree(self, tree, X=None, y=None, weight=0.1):
+    def add_tree(self, tree, X=None, y=None, weight=0.1, forced_features=None):
         if X is not None and y is not None:
-            tree.fit(X, y)
+            tree.fit(X, y, forced_features)
             tree.classes_ = self.classes_
 
         self.trees.append(tree)

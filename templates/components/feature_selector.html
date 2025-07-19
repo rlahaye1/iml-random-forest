@@ -1,0 +1,88 @@
+<!-- Bouton pour ouvrir la modale de features -->
+<button
+  type="button"
+  onclick="openModalFeatureSelector()"
+  class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+>
+  Sélectionner des features
+</button>
+
+<!-- Modale de sélection des features -->
+<div
+  id="featureModal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white w-11/12 max-w-xl rounded-lg p-6 shadow-xl relative">
+    
+    <h3 class="text-xl font-semibold mb-4 text-gray-800">Sélectionner des features</h3>
+
+    <form id="featureSelectionForm">
+      <div class="grid grid-cols-2 gap-3">
+        {% for i in range(X_train_global.shape[1]) %}
+        <label class="flex items-center gap-2 text-gray-700">
+          <input type="checkbox" name="feature" value="{{ i }}">
+          {{ feature_names[i] }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="mt-6 flex justify-end gap-4">
+        <button
+          type="button"
+          onclick="submitFeatureSelection()"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+        >
+          Valider
+        </button>
+        <button
+          type="button"
+          onclick="closeModalFeatureSelector()"
+          class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"
+        >
+          Fermer
+        </button>
+      </div>
+    </form>
+
+    <!-- Bouton fermer (croix) -->
+    <button
+      type="button"
+      onclick="closeModalFeatureSelector()"
+      class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"
+      aria-label="Fermer"
+    >
+      &times;
+    </button>
+  </div>
+</div>
+
+<script>
+  function openModalFeatureSelector() {
+    document.getElementById("featureModal").style.display = "block";
+  }
+
+  function closeModalFeatureSelector() {
+    document.getElementById("featureModal").style.display = "none";
+  }
+
+  function submitFeatureSelection() {
+    const selectedFeatures = Array.from(document.querySelectorAll("input[name='feature']:checked"))
+                                  .map(cb => cb.value)
+                                  .join(",");
+
+    fetch("/select-features", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "selected_features=" + encodeURIComponent(selectedFeatures)
+    }).then(response => {
+      if (response.ok) {
+        alert("Features sélectionnées !");
+        closeModalFeatureSelector();
+      } else {
+        alert("Erreur lors de la sélection des features.");
+      }
+    });
+  }
+</script>
