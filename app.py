@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, send_from_directory
 import numpy as np
 import os
 from sklearn.datasets import load_iris, load_wine, load_breast_cancer, fetch_california_housing 
+from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from WeightedRandomForest import WeightedRandomForest
 from Tree import Tree
@@ -24,6 +25,10 @@ current_train_percent = 70
 current_dataset_selected = "california"
 selected_features = None
 max_accuracy = 100
+current_chunk = 0
+chunk_list_x_train = None
+chunk_list_y_train = None
+chunk_predictions_correct = []
 
 # ---------------- Utils ------------------
 
@@ -76,6 +81,7 @@ def get_filtered_tree_data(forest, threshold=100):
 
 def load_forest(n_trees=6, train_size=0.7, dataset="california"):
     global X_train_global, y_train_global, feature_names
+    global chunk_list_x_train, chunk_list_y_train, current_chunk
    
     # test_size = 1-train_size
     if dataset == "iris":
@@ -102,9 +108,30 @@ def load_forest(n_trees=6, train_size=0.7, dataset="california"):
         data.data, data.target, train_size=train_size, random_state=42
     )
 
-    # Stocker pour l'affichage dans la modale
+
+     # Mélanger pour bien répartir
+    X_shuffled, y_shuffled = shuffle(X_train, y_train, random_state=42)
+
+    n_total = len(X_shuffled)
+    n_main = int(0.8 * n_total)
+    n_chunk = int(0.02 * n_total)
+
+    # La partie principale pour X_train / y_train
+    X_train = X_shuffled[:n_main]
+    y_train = y_shuffled[:n_main]
+
+    # Les 20% restants en 10 chunks
+    X_chunk_pool = X_shuffled[n_main:n_main + n_chunk * 10]
+    y_chunk_pool = y_shuffled[n_main:n_main + n_chunk * 10]
+
+    chunk_list_x_train = [X_chunk_pool[i * n_chunk:(i + 1) * n_chunk] for i in range(10)]
+    chunk_list_y_train = [y_chunk_pool[i * n_chunk:(i + 1) * n_chunk] for i in range(10)]
+
+    # Stockage global pour affichage
     X_train_global = X_train
     y_train_global = y_train
+
+    current_chunk = 0  # reset
 
     forest = WeightedRandomForest()
     forest.fit(X_train, y_train, n_trees=n_trees)
@@ -116,6 +143,8 @@ forest, X_test, y_test = load_forest()
 # ---------------- Render Index ------------
 
 def render_index(page=0, test_index=0, prediction=None, true_label=None):
+    global chunk_predictions_correct
+
     n_per_page = 2
     start = page * n_per_page
     end = start + n_per_page
@@ -143,6 +172,12 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
     trees_paginated = filtered_trees[start:end]
     n_pages = ceil(len(filtered_trees) / n_per_page)
 
+    if chunk_list_x_train and chunk_list_y_train:
+        X_current = chunk_list_x_train[current_chunk]
+        y_current = chunk_list_y_train[current_chunk]
+        y_pred = forest.predict(X_current)
+        chunk_predictions_correct = (y_pred == y_current).astype(int).tolist()
+
     return render_template("index.html",
                            trees_paginated=trees_paginated,
                            n_pages=n_pages,
@@ -160,7 +195,11 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
                            n_trees=current_n_trees,
                            train_percent=current_train_percent,
                            dataset_selected=current_dataset_selected,
-                           feature_names=feature_names)
+                           feature_names=feature_names,
+                           current_chunk= current_chunk,
+                           chunk_list_x_train=chunk_list_x_train,
+                           chunk_predictions_correct=chunk_predictions_correct
+                           )
 
 
 # ---------------- Routes ------------------
@@ -201,7 +240,8 @@ def select_data():
 
 @app.route("/add-tree", methods=["POST"])
 def add_tree():
-    global X_selected, y_selected, forest, current_n_trees, current_train_percent, current_dataset_selected, selected_features, feature_names, max_accuracy
+    global X_selected, y_selected, forest, current_n_trees, current_train_percent
+    global current_dataset_selected, selected_features, feature_names, max_accuracy, current_chunk
 
     weight_str = request.form.get("weight")
     max_accuracy = int(request.args.get("max_accuracy", 100))
@@ -227,6 +267,15 @@ def add_tree():
     # Aller à la dernière page
     n_per_page = 2
     last_page = ceil(len(forest.trees) / n_per_page) - 1
+
+    current_chunk += 1
+
+    if current_chunk == 10:
+        current_chunk=0
+    X_selected = None
+    y_selected = None
+    selected_features= None
+
 
     return render_index(page=last_page)
 

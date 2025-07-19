@@ -14,8 +14,27 @@
 >
   <div class="bg-white w-11/12 max-w-6xl max-h-[80vh] rounded-lg p-6 overflow-auto shadow-xl relative">
     
-    <h3 class="text-xl font-semibold mb-4 text-gray-800">Sélectionner des données d'entraînement</h3>
+    <h3 class="text-xl font-semibold mb-4 text-gray-800">Sélectionner des données d'entraînement (chunck n° {{current_chunk}})</h3>
 
+    <div class="flex gap-4 mb-4">
+      <button
+        type="button"
+        onclick="selectRandomSamples(100)" 
+        class="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
+      >
+        🔀 Sélection aléatoire
+      </button>
+
+      <button
+        type="button"
+        onclick="selectFailedSamples()"
+        class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+      >
+        ❌ Sélection des ratés
+      </button>
+    </div>
+
+    
     <form id="selectionForm">
       <div class="overflow-auto border rounded">
         <table class="min-w-full text-sm text-left border border-gray-300">
@@ -28,8 +47,8 @@
             </tr>
           </thead>
           <tbody>
-            {% for i in range(X_train_global.shape[0]) %}
-            <tr class="hover:bg-gray-50">
+            {% for i in range(chunk_list_x_train[current_chunk].shape[0]) %}
+            <tr class="hover:bg-gray-50 {% if chunk_predictions_correct[i] == 1 %}bg-green-100{% else %}bg-red-100{% endif %}">
               <td class="p-2 border-b">
                 <input type="checkbox" name="sample" value="{{ i }}">
               </td>
@@ -98,6 +117,27 @@
         closeModalDataSelector();
       } else {
         alert("Erreur lors de la sélection.");
+      }
+    });
+  }
+
+  // ✅ Sélection aléatoire de n échantillons
+  function selectRandomSamples(n) {
+    const checkboxes = Array.from(document.querySelectorAll("input[name='sample']"));
+    checkboxes.forEach(cb => cb.checked = false); // reset
+    const shuffled = checkboxes.sort(() => 0.5 - Math.random());
+    shuffled.slice(0, n).forEach(cb => cb.checked = true);
+  }
+
+  // ❌ Sélection des données ratées (bg-red-100)
+  function selectFailedSamples() {
+    const rows = document.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+      const checkbox = row.querySelector("input[name='sample']");
+      if (row.classList.contains("bg-red-100")) {
+        checkbox.checked = true;
+      } else {
+        checkbox.checked = false;
       }
     });
   }
