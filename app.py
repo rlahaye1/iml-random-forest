@@ -113,47 +113,19 @@ def load_forest(n_trees=6, train_size=0.7, dataset="california"):
 
 forest, X_test, y_test = load_forest()
 
-# ---------------- Routes ------------------
+# ---------------- Render Index ------------
 
-@app.route("/")
-def index():
-
-    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected, feature_names, max_accuracy
-
+def render_index(page=0, test_index=0, prediction=None, true_label=None):
     n_per_page = 2
-
-    page = int(request.args.get("page", 0))
-    test_index = int(request.args.get("test_index", 0))
-    n_trees = int(request.args.get("n_trees", current_n_trees))
-    dataset_selected = request.args.get("dataset-select",current_dataset_selected)
-    train_percent = int(request.args.get("train_percent", current_train_percent))
-    max_accuracy = int(request.args.get("max_accuracy", 100))
-
-    # Si les hyper-paramètres changent, on recharge la forêt
-    if current_n_trees != n_trees or current_train_percent != train_percent or current_dataset_selected != dataset_selected:
-        train_size = train_percent / 100.0
-        # test_size = 1 - train_size
-
-        forest, X_test, y_test = load_forest(n_trees=n_trees, train_size=train_size, dataset=dataset_selected)
-
-        current_n_trees = n_trees
-        current_train_percent = train_percent
-        current_dataset_selected = dataset_selected
-        clear_tree_images()
-
     start = page * n_per_page
     end = start + n_per_page
 
-    # Générer images si pas déjà là
+    # Générer images si elles n'existent pas
     for idx, tree in enumerate(forest.trees):
         path = os.path.join(app.config["TREE_IMG_FOLDER"], f"tree_{idx}.png")
         if not os.path.exists(path) and hasattr(tree, "root"):
             build_graphviz_png(tree.root, f"tree_{idx}.png")
 
-    predictions = forest.predict(X_test[test_index].reshape(1, -1))
-    true_label = y_test[test_index]
-
-    # calculer accuracy global
     global_accuracy = None
     if len(y_test) > 0:
         y_pred_all = forest.predict(X_test)
@@ -161,7 +133,6 @@ def index():
         total = len(y_test)
         global_accuracy = round((correct / total) * 100)
 
-        # Calculer accuracy par arbre à partir de per_tree_preds déjà présents
         forest.accuracy = []
         for preds in forest.per_tree_preds:
             correct_tree = np.sum(preds == y_test)
@@ -169,25 +140,16 @@ def index():
             forest.accuracy.append(round(acc_tree, 2))
 
     filtered_trees = get_filtered_tree_data(forest, max_accuracy)
-    # trees_paginated = [
-    #     {
-    #         "index": i,
-    #         "tree": forest.trees[i],
-    #         "weight": forest.weights[i],
-    #         "accuracies": forest.accuracy[i]
-    #     }
-    #     for i in range(start, min(end, len(forest.trees)))
-    # ]
-    n_pages = ceil(len(filtered_trees) / n_per_page)
     trees_paginated = filtered_trees[start:end]
+    n_pages = ceil(len(filtered_trees) / n_per_page)
 
     return render_template("index.html",
-                            trees_paginated=trees_paginated,
-                           n_pages=ceil(len(filtered_trees)/n_per_page),
+                           trees_paginated=trees_paginated,
+                           n_pages=n_pages,
                            page=page,
                            current_page=page,
                            test_index=test_index,
-                           prediction=predictions[0],
+                           prediction=prediction,
                            true_label=true_label,
                            total_trees=len(forest.trees),
                            per_page=n_per_page,
@@ -195,11 +157,34 @@ def index():
                            X_train_global=X_train_global,
                            y_train_global=y_train_global,
                            global_accuracy=global_accuracy,
-                           n_trees=n_trees,
-                           train_percent=train_percent,
+                           n_trees=current_n_trees,
+                           train_percent=current_train_percent,
                            dataset_selected=current_dataset_selected,
-                           feature_names=feature_names
-                           )
+                           feature_names=feature_names)
+
+
+# ---------------- Routes ------------------
+
+@app.route("/")
+def index():
+    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected, feature_names, max_accuracy
+
+    n_trees = int(request.args.get("n_trees", current_n_trees))
+    dataset_selected = request.args.get("dataset-select", current_dataset_selected)
+    train_percent = int(request.args.get("train_percent", current_train_percent))
+    max_accuracy = int(request.args.get("max_accuracy", 100))
+    page = int(request.args.get("page", 0))
+    test_index = int(request.args.get("test_index", 0))
+
+    # Si les hyper-paramètres changent, on recharge la forêt
+    if current_n_trees != n_trees or current_train_percent != train_percent or current_dataset_selected != dataset_selected:
+        forest, X_test, y_test = load_forest(n_trees=n_trees, train_size=train_percent / 100.0, dataset=dataset_selected)
+        current_n_trees = n_trees
+        current_train_percent = train_percent
+        current_dataset_selected = dataset_selected
+        clear_tree_images()
+
+    return render_index(page=page, test_index=test_index)
 
 
 @app.route("/select-data", methods=["POST"])
@@ -217,8 +202,6 @@ def select_data():
 @app.route("/add-tree", methods=["POST"])
 def add_tree():
     global X_selected, y_selected, forest, current_n_trees, current_train_percent, current_dataset_selected, selected_features, feature_names, max_accuracy
-
-    # selected_feature = request.args.get("selected-feature",current_dataset_selected)
 
     weight_str = request.form.get("weight")
     max_accuracy = int(request.args.get("max_accuracy", 100))
@@ -241,62 +224,11 @@ def add_tree():
     if hasattr(new_tree, "root"):
         build_graphviz_png(new_tree.root, f"tree_{new_index}.png")
 
-    # recalculer pagination pour afficher dernière page
+    # Aller à la dernière page
     n_per_page = 2
-    total_trees = len(forest.trees)
-    last_page = ceil(total_trees / n_per_page) - 1
-    start = last_page * n_per_page
-    end = start + n_per_page
+    last_page = ceil(len(forest.trees) / n_per_page) - 1
 
-
-    global_accuracy = None
-    if len(y_test) > 0:
-        y_pred_all = forest.predict(X_test)
-        correct = np.sum(y_pred_all == y_test)
-        total = len(y_test)
-        global_accuracy = round((correct / total) * 100)
-        # Calculer accuracy par arbre à partir de per_tree_preds déjà présents
-        forest.accuracy = []
-        for preds in forest.per_tree_preds:
-            correct_tree = np.sum(preds == y_test)
-            acc_tree = (correct_tree / total) * 100
-            forest.accuracy.append(round(acc_tree, 2))
-
-    filtered_trees = get_filtered_tree_data(forest, max_accuracy)
-    # trees_paginated = [
-    #     {
-    #         "index": i,
-    #         "tree": forest.trees[i],
-    #         "weight": forest.weights[i],
-    #         "accuracies": forest.accuracy[i]
-    #     }
-    #     for i in range(start, min(end, total_trees))
-    # ]
-    n_pages = ceil(len(filtered_trees) / n_per_page)
-    trees_paginated = filtered_trees[start:end]
-
-    
-
-    return render_template("index.html",
-                           trees_paginated=trees_paginated,
-                           n_pages=ceil(total_trees / n_per_page),
-                           page=last_page,
-                           current_page=last_page,
-                           test_index=0,
-                           prediction=None,
-                           true_label=None,
-                           total_trees=total_trees,
-                           per_page=n_per_page,
-                           X_test=X_test,
-                           X_train_global=X_train_global,
-                           y_train_global=y_train_global,
-                           global_accuracy=global_accuracy,
-                           n_trees=current_n_trees,
-                           train_percent=current_train_percent,
-                           dataset_selected=current_dataset_selected,
-                           feature_names=feature_names
-                           )
-
+    return render_index(page=last_page)
 
 @app.route("/select-features", methods=["POST"])
 def select_features():
