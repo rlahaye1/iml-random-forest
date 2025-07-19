@@ -19,9 +19,9 @@ class WeightedRandomForest:
             # Tirage aléatoire avec remplacement
             X_sample, y_sample = resample(X, y)
             tree = Tree()
-            self.add_tree(tree, X_sample, y_sample, weight=1.0)
+            self.add_tree(tree, X_sample, y_sample, weight=0.1)
 
-    def add_tree(self, tree, X=None, y=None, weight=1.0):
+    def add_tree(self, tree, X=None, y=None, weight=0.1):
         if X is not None and y is not None:
             tree.fit(X, y)
             tree.classes_ = self.classes_

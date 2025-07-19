@@ -58,10 +58,10 @@ def clear_tree_images():
 
 # ---------------- Load forest ------------------
 
-def load_forest(n_trees=6, train_size=0.7, test_size=0.3, dataset="iris"):
+def load_forest(n_trees=6, train_size=0.7, dataset="iris"):
     global X_train_global, y_train_global
    
-    
+    # test_size = 1-train_size
     if dataset == "iris":
         data = load_iris()
     elif dataset == "wine":
@@ -70,7 +70,7 @@ def load_forest(n_trees=6, train_size=0.7, test_size=0.3, dataset="iris"):
         data = load_breast_cancer()
 
     X_train, X_test, y_train, y_test = train_test_split(
-        data.data, data.target, train_size=train_size, test_size=test_size, random_state=42
+        data.data, data.target, train_size=train_size, random_state=42
     )
 
     # Stocker pour l'affichage dans la modale
