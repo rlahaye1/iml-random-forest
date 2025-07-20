@@ -53,4 +53,41 @@
     </div>
   </div>
   {% endif %}
+  <!-- Camembert des features utilisés -->
+  <div class="mt-10 w-full max-w-md">
+    <h3 class="text-xl font-semibold mb-4">Répartition pondérée des features</h3>
+    <canvas id="featurePie" width="400" height="400"></canvas>
+  </div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const featureData = {{ feature_distribution | tojson }};
+  const ctx = document.getElementById('featurePie').getContext('2d');
+  const featurePie = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: featureData.map(f => f.name),
+      datasets: [{
+        data: featureData.map(f => f.value),
+        backgroundColor: featureData.map((_, i) => 
+          ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#facc15', '#fb923c', '#f472b6', '#60a5fa', '#a78bfa', '#38bdf8'][i % 10]
+        )
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Features utilisées (pondérées par arbre)'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+</script>
+
+

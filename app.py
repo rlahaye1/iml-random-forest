@@ -10,6 +10,7 @@ from Tree import Tree
 import graphviz
 from PIL import Image
 import io
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config["TREE_IMG_FOLDER"] = "static/trees"
@@ -75,6 +76,30 @@ def get_filtered_tree_data(forest, threshold=100):
                 "accuracies": acc
             })
     return filtered_data
+
+def calculate_features_ponderate(filtered_trees):
+    global feature_names
+
+    # Calcul pondéré des features
+    feature_weight_map = defaultdict(float)
+    for item in filtered_trees:
+        tree = item["tree"]
+        weight = item["weight"]
+        for f in getattr(tree, "selected_features", []):
+            feature_weight_map[f] += weight
+
+    # Conversion en liste ordonnée avec noms de features
+    feature_distribution = []
+    for i, name in enumerate(feature_names):
+        value = round(feature_weight_map.get(i, 0), 4)
+        if value > 0:
+            feature_distribution.append({"name": name, "value": value})
+
+    # Optionnel : trier par importance décroissante
+    feature_distribution.sort(key=lambda x: x["value"], reverse=True)
+
+    return feature_distribution
+
 
 
 # ---------------- Load forest ------------------
@@ -178,6 +203,8 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
         y_pred = forest.predict(X_current)
         chunk_predictions_correct = (y_pred == y_current).astype(int).tolist()
 
+    feature_distribution = calculate_features_ponderate(filtered_trees)
+
     return render_template("index.html",
                            trees_paginated=trees_paginated,
                            n_pages=n_pages,
@@ -198,7 +225,8 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
                            feature_names=feature_names,
                            current_chunk= current_chunk,
                            chunk_list_x_train=chunk_list_x_train,
-                           chunk_predictions_correct=chunk_predictions_correct
+                           chunk_predictions_correct=chunk_predictions_correct,
+                           feature_distribution=feature_distribution
                            )
 
 
@@ -288,6 +316,37 @@ def select_features():
     else:
         selected_features = None
     return "OK"
+
+@app.route("/delete-tree/<int:index>", methods=["POST"])
+def delete_tree(index):
+    global forest
+
+    if index < 0 or index >= len(forest.trees):
+        return f"Index {index} invalide", 400
+
+    # Supprimer l'arbre, son poids, et ses prédictions
+    del forest.trees[index]
+    del forest.weights[index]
+    del forest.per_tree_preds[index]
+    if hasattr(forest, "accuracy") and index < len(forest.accuracy):
+        del forest.accuracy[index]
+
+    # Supprimer le fichier image associé si présent
+    image_path = os.path.join(app.config["TREE_IMG_FOLDER"], f"tree_{index}.png")
+    if os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+        except Exception as e:
+            print(f"Erreur lors de la suppression de l'image : {e}")
+
+    # Renommer les images restantes pour conserver les bons index
+    for i, tree in enumerate(forest.trees):
+        expected_path = os.path.join(app.config["TREE_IMG_FOLDER"], f"tree_{i}.png")
+        if not os.path.exists(expected_path) and hasattr(tree, "root"):
+            build_graphviz_png(tree.root, f"tree_{i}.png")
+
+    return render_index()
+
 
 
 # ---------------- Run ------------------
