@@ -7,6 +7,19 @@
   <input type="number" step="0.1" name="max_accuracy" id="accuracy" min="0" max="100"
          value="{{ request.args.get('max_accuracy', 100) }}"
          class="border rounded px-3 py-1 w-24 text-right text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+  <div class="flex items-center gap-2">
+    <label for="feature_filter" class="text-gray-700 font-medium">Feature utilisée :</label>
+    <select name="feature_filter" id="feature_filter"
+            class="border rounded px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Toutes --</option>
+      {% for fname in feature_names %}
+        <option value="{{ loop.index0 }}"
+          {% if request.args.get('feature_filter') == loop.index0|string %}selected{% endif %}>
+          {{ fname }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
   <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition">Filtrer</button>
 </form>
 
@@ -17,7 +30,7 @@
   <form method="get" action="/" class="m-0">
     <input type="hidden" name="page" value="{{ page - 1 }}">
     <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
-
+    <input type="hidden" name="feature_filter" value="{{ request.args.get('feature_filter') }}">
     <button type="submit" 
             class="text-3xl text-gray-600 hover:text-gray-900 transition p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Page précédente">
@@ -81,7 +94,7 @@
   <form method="get" action="/" class="m-0">
     <input type="hidden" name="page" value="{{ page + 1 }}">
     <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
-
+    <input type="hidden" name="feature_filter" value="{{ request.args.get('feature_filter') }}">
     <button type="submit" 
             class="text-3xl text-gray-600 hover:text-gray-900 transition p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Page suivante">
@@ -92,3 +105,15 @@
 
   {% include "components/add_tree.html" %}
 </div>
+
+<script>
+  // Supprimer le champ si "Toutes" est sélectionné
+  const form = document.querySelector('form[action="/"]');
+  const select = document.getElementById('feature_filter');
+
+  form.addEventListener('submit', function (e) {
+    if (select.value === "") {
+      select.removeAttribute('name');
+    }
+  });
+</script>

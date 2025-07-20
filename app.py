@@ -30,6 +30,7 @@ current_chunk = 0
 chunk_list_x_train = None
 chunk_list_y_train = None
 chunk_predictions_correct = []
+feature_filter = None
 
 # ---------------- Utils ------------------
 
@@ -64,11 +65,19 @@ def clear_tree_images():
             except Exception as e:
                 print(f"Erreur lors de la suppression de {path} : {e}")
 
-def get_filtered_tree_data(forest, threshold=100):
-    # On garde les arbres originaux, mais on filtre juste les données pour affichage
+def get_filtered_tree_data(forest, threshold=100, feature_filter=None):
     filtered_data = []
+
+    # Si vide ou invalide → pas de filtre
+    try:
+        feature_filter = int(feature_filter)
+    except (TypeError, ValueError):
+        feature_filter = None
+
     for i, (tree, weight, acc) in enumerate(zip(forest.trees, forest.weights, forest.accuracy)):
         if acc <= threshold:
+            if feature_filter is not None and feature_filter not in tree.selected_features:
+                continue
             filtered_data.append({
                 "index": i,
                 "tree": tree,
@@ -76,6 +85,7 @@ def get_filtered_tree_data(forest, threshold=100):
                 "accuracies": acc
             })
     return filtered_data
+
 
 def calculate_features_ponderate(filtered_trees):
     global feature_names
@@ -133,8 +143,7 @@ def load_forest(n_trees=6, train_size=0.7, dataset="california"):
         data.data, data.target, train_size=train_size, random_state=42
     )
 
-
-     # Mélanger pour bien répartir
+    # Mélanger pour bien répartir
     X_shuffled, y_shuffled = shuffle(X_train, y_train, random_state=42)
 
     n_total = len(X_shuffled)
@@ -193,7 +202,7 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
             acc_tree = (correct_tree / total) * 100
             forest.accuracy.append(round(acc_tree, 2))
 
-    filtered_trees = get_filtered_tree_data(forest, max_accuracy)
+    filtered_trees = get_filtered_tree_data(forest, max_accuracy, feature_filter)
     trees_paginated = filtered_trees[start:end]
     n_pages = ceil(len(filtered_trees) / n_per_page)
 
@@ -234,7 +243,7 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
 
 @app.route("/")
 def index():
-    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected, feature_names, max_accuracy
+    global forest, X_test, y_test, current_n_trees, current_train_percent, current_dataset_selected, feature_names, max_accuracy, feature_filter
 
     n_trees = int(request.args.get("n_trees", current_n_trees))
     dataset_selected = request.args.get("dataset-select", current_dataset_selected)
@@ -242,6 +251,7 @@ def index():
     max_accuracy = int(request.args.get("max_accuracy", 100))
     page = int(request.args.get("page", 0))
     test_index = int(request.args.get("test_index", 0))
+    feature_filter = request.args.get("feature_filter")
 
     # Si les hyper-paramètres changent, on recharge la forêt
     if current_n_trees != n_trees or current_train_percent != train_percent or current_dataset_selected != dataset_selected:
@@ -269,10 +279,11 @@ def select_data():
 @app.route("/add-tree", methods=["POST"])
 def add_tree():
     global X_selected, y_selected, forest, current_n_trees, current_train_percent
-    global current_dataset_selected, selected_features, feature_names, max_accuracy, current_chunk
+    global current_dataset_selected, selected_features, feature_names, max_accuracy, current_chunk, feature_filter
 
     weight_str = request.form.get("weight")
     max_accuracy = int(request.args.get("max_accuracy", 100))
+    feature_filter = request.args.get("feature_filter")
 
     if not weight_str:
         return "Poids non fourni", 400
