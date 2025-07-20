@@ -93,11 +93,11 @@
 
 <script>
   function openModalDataSelector() {
-    document.getElementById("selectionModal").style.display = "block";
+    document.getElementById("selectionModal").classList.remove("hidden");
   }
 
   function closeModalDataSelector() {
-    document.getElementById("selectionModal").style.display = "none";
+    document.getElementById("selectionModal").classList.add("hidden");
   }
 
   function submitSelection() {

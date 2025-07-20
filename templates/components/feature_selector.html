@@ -58,11 +58,12 @@
 
 <script>
   function openModalFeatureSelector() {
-    document.getElementById("featureModal").style.display = "block";
+    document.getElementById("featureModal").classList.remove("hidden");
   }
 
   function closeModalFeatureSelector() {
-    document.getElementById("featureModal").style.display = "none";
+    document.getElementById("featureModal").classList.add("hidden");
+
   }
 
   function submitFeatureSelection() {

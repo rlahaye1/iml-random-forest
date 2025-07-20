@@ -1,35 +1,60 @@
 
 <h3 class="text-2xl font-bold mb-6 text-gray-900 mt-6">Galerie des arbres</h3>
 
-<form method="get" action="/" class="mb-6 flex flex-wrap items-center gap-6 bg-white p-4 rounded-lg shadow-sm">
+<div class="w-full bg-white rounded shadow py-6" style="max-width: none;">
+  <div class="max-w-7xl mx-auto mb-2 px-6">
+    <form method="get" action="/" class="grid grid-cols-2 gap-x-6 gap-y-4 items-end">
 
-  <label for="accuracy" class="text-gray-800 font-semibold whitespace-nowrap">Accuracy maximale :</label>
-  <input type="number" step="0.1" name="max_accuracy" id="accuracy" min="0" max="100"
-         value="{{ request.args.get('max_accuracy', 100) }}"
-         class="border border-gray-300 rounded-md px-3 py-2 w-28 text-right text-gray-900 placeholder-gray-400
-                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" 
-         placeholder="0 - 100">
+      <!-- Bloc 1 : Accuracy -->
+      <div class="flex flex-col">
+        <label for="accuracy" class="mb-2 font-medium text-gray-700">Accuracy maximale :</label>
+        <input
+          type="number"
+          step="0.1"
+          name="max_accuracy"
+          id="accuracy"
+          min="0"
+          max="100"
+          value="{{ request.args.get('max_accuracy', 100) }}"
+          class="border border-gray-300 rounded px-3 py-2 text-right text-gray-900 placeholder-gray-400
+                 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition w-full max-w-xs"
+          placeholder="0 - 100"
+        />
+      </div>
 
-  <div class="flex items-center gap-3">
-    <label for="feature_filter" class="text-gray-800 font-semibold whitespace-nowrap">Feature utilisée :</label>
-    <select name="feature_filter" id="feature_filter"
-            class="border border-gray-300 rounded-md px-3 py-2 text-gray-900
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition cursor-pointer">
-      <option value="">-- Toutes --</option>
-      {% for fname in feature_names %}
-        <option value="{{ loop.index0 }}" {% if request.args.get('feature_filter') == loop.index0|string %}selected{% endif %}>
-          {{ fname }}
-        </option>
-      {% endfor %}
-    </select>
+      <!-- Bloc 2 : Feature utilisée + bouton dans la même ligne -->
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div class="flex flex-col w-full">
+          <label for="feature_filter" class="mb-2 font-medium text-gray-700">Feature utilisée :</label>
+          <select
+            name="feature_filter"
+            id="feature_filter"
+            class="border border-gray-300 rounded px-3 py-2 text-gray-900
+                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition cursor-pointer w-full max-w-xs"
+          >
+            <option value="">-- Toutes --</option>
+            {% for fname in feature_names %}
+              <option value="{{ loop.index0 }}" {% if request.args.get('feature_filter') == loop.index0|string %}selected{% endif %}>
+                {{ fname }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Bouton "Filtrer" aligné à droite sur la même ligne -->
+        <button
+          type="submit"
+          class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300
+                 transition font-semibold shadow-md whitespace-nowrap"
+        >
+          Filtrer
+        </button>
+      </div>
+
+    </form>
   </div>
+</div>
 
-  <button type="submit" 
-          class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300
-                 transition font-semibold shadow-md">
-    Filtrer
-  </button>
-</form>
 
 
 <div class="flex items-center justify-center gap-6">
