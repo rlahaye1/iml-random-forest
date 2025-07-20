@@ -1,63 +1,50 @@
-<!-- Bloc Prédiction Individuelle -->
-<div class="flex flex-wrap gap-10 items-center justify-center p-6">
+<div class="flex flex-col md:flex-row flex-wrap gap-12 items-center justify-center p-6 bg-white rounded-lg shadow-md max-w-4xl mx-auto">
 
-  <!-- Bloc prédiction individuelle -->
-  <div class="max-w-sm w-full">
-    <h2 class="text-2xl font-semibold mb-4">Prédiction sur un échantillon test</h2>
-    <form method="get" class="space-y-4">
-      <label for="test_index" class="block text-gray-700 font-medium mb-1">
-        Index (0 à {{ X_test|length - 1 }}):
-      </label>
-      <input
-        type="number"
-        id="test_index"
-        name="test_index"
-        value="{{ test_index }}"
-        min="0"
-        max="{{ X_test|length - 1 }}"
-        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-      >
-      <input
-        type="submit"
-        value="Prédire"
-        class="cursor-pointer bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-      >
-    </form>
-    <p class="mt-4 text-gray-800">Vraie étiquette : {{ true_label }}</p>
-    <p class="mt-2 font-bold text-lg">Prédiction finale : {{ prediction }}</p>
+  <!-- Bloc données de test -->
+  <div class="text-center mb-6 md:mb-0 md:w-48">
+    <h3 class="text-gray-600 uppercase tracking-wider text-sm font-semibold mb-1">Données de test</h3>
+    <p class="text-3xl font-bold text-gray-800">{{ X_test|length }}</p>
   </div>
 
-  <!-- Cercle de précision globale -->
+  <!-- Bloc accuracy global circulaire -->
   {% if global_accuracy is not none %}
-  <div class="relative w-40 h-40 flex items-center justify-center">
-    <svg viewBox="0 0 36 36" class="transform -rotate-90 w-40 h-40">
-      <path
-        d="M18 2.0845
-           a 15.9155 15.9155 0 0 1 0 31.831
-           a 15.9155 15.9155 0 0 1 0 -31.831"
-        fill="none"
-        stroke="#eee"
-        stroke-width="4"
-      />
-      <path
-        d="M18 2.0845
-           a 15.9155 15.9155 0 0 1 0 31.831"
-        fill="none"
-        stroke="{% if global_accuracy > 50 %}#16a34a{% else %}#dc2626{% endif %}"  <!-- Vert ou rouge Tailwind -->
-        stroke-width="4"
-        stroke-dasharray="{{ global_accuracy }}, 100"
-      />
-    </svg>
-    <div class="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-      {{ global_accuracy }}%
+  <div class="flex flex-col items-center md:w-48">
+    <h3 class="text-gray-600 uppercase tracking-wider text-sm font-semibold mb-3">Accuracy globale</h3>
+    <div class="relative w-40 h-40">
+      <svg viewBox="0 0 36 36" class="transform -rotate-90 w-40 h-40">
+        <path
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831"
+          fill="none"
+          stroke="#e5e7eb"  <!-- gris clair Tailwind -->
+          stroke-width="4"
+          class="transition-colors duration-500"
+        />
+        <path
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831"
+          fill="none"
+          stroke="{% if global_accuracy > 50 %}#16a34a{% else %}#dc2626{% endif %}"  <!-- Vert ou rouge -->
+          stroke-width="4"
+          stroke-dasharray="{{ global_accuracy }}, 100"
+          stroke-linecap="round"
+          style="transition: stroke-dasharray 1s ease-out;"
+        />
+      </svg>
+      <div class="absolute inset-0 flex items-center justify-center text-4xl font-extrabold text-gray-900 select-none">
+        {{ global_accuracy }}%
+      </div>
     </div>
   </div>
   {% endif %}
-  <!-- Camembert des features utilisés -->
-  <div class="mt-10 w-full max-w-md">
-    <h3 class="text-xl font-semibold mb-4">Répartition pondérée des features</h3>
+
+  <!-- Camembert des features -->
+  <div class="w-full max-w-md">
+    <h3 class="text-gray-700 font-semibold text-lg mb-4 text-center">Répartition pondérée des features</h3>
     <canvas id="featurePie" width="400" height="400"></canvas>
   </div>
+
 </div>
 
 <!-- Chart.js -->
@@ -71,23 +58,34 @@
       labels: featureData.map(f => f.name),
       datasets: [{
         data: featureData.map(f => f.value),
-        backgroundColor: featureData.map((_, i) => 
+        backgroundColor: featureData.map((_, i) =>
           ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#facc15', '#fb923c', '#f472b6', '#60a5fa', '#a78bfa', '#38bdf8'][i % 10]
-        )
+        ),
+        borderColor: '#fff',
+        borderWidth: 2,
       }]
     },
     options: {
+      responsive: true,
       plugins: {
         title: {
-          display: true,
-          text: 'Features utilisées (pondérées par arbre)'
+          display: false,
         },
         legend: {
-          position: 'bottom'
+          position: 'bottom',
+          labels: {
+            font: { size: 14 },
+            padding: 20,
+            boxWidth: 18,
+            boxHeight: 18,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.label} : ${ctx.parsed.toFixed(2)}`
+          }
         }
       }
     }
   });
 </script>
-
-

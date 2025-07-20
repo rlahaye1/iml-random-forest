@@ -87,25 +87,21 @@ def get_filtered_tree_data(forest, threshold=100, feature_filter=None):
     return filtered_data
 
 
-def calculate_features_ponderate(filtered_trees):
+def calculate_features_ponderate(trees, weights):
     global feature_names
 
-    # Calcul pondéré des features
     feature_weight_map = defaultdict(float)
-    for item in filtered_trees:
-        tree = item["tree"]
-        weight = item["weight"]
+
+    for tree, weight in zip(trees, weights):
         for f in getattr(tree, "selected_features", []):
             feature_weight_map[f] += weight
 
-    # Conversion en liste ordonnée avec noms de features
     feature_distribution = []
     for i, name in enumerate(feature_names):
         value = round(feature_weight_map.get(i, 0), 4)
         if value > 0:
             feature_distribution.append({"name": name, "value": value})
 
-    # Optionnel : trier par importance décroissante
     feature_distribution.sort(key=lambda x: x["value"], reverse=True)
 
     return feature_distribution
@@ -202,6 +198,8 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
             acc_tree = (correct_tree / total) * 100
             forest.accuracy.append(round(acc_tree, 2))
 
+    feature_distribution = calculate_features_ponderate(forest.trees, forest.weights)
+
     filtered_trees = get_filtered_tree_data(forest, max_accuracy, feature_filter)
     trees_paginated = filtered_trees[start:end]
     n_pages = ceil(len(filtered_trees) / n_per_page)
@@ -212,7 +210,7 @@ def render_index(page=0, test_index=0, prediction=None, true_label=None):
         y_pred = forest.predict(X_current)
         chunk_predictions_correct = (y_pred == y_current).astype(int).tolist()
 
-    feature_distribution = calculate_features_ponderate(filtered_trees)
+    
 
     return render_template("index.html",
                            trees_paginated=trees_paginated,
