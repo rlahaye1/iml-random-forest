@@ -1,11 +1,10 @@
 
-<h3 class="text-2xl font-bold mb-6 text-gray-900 mt-6">Galerie des arbres</h3>
+<h3 id="galerie" class="text-2xl font-bold mb-6 text-gray-900 mt-6">Galerie des arbres</h3>
 
 <div class="w-full bg-white rounded shadow py-6" style="max-width: none;">
   <div class="max-w-7xl mx-auto mb-2 px-6">
     <form method="get" action="/" class="grid grid-cols-2 gap-x-6 gap-y-4 items-end">
 
-      <!-- Bloc 1 : Accuracy -->
       <div class="flex flex-col">
         <label for="accuracy" class="mb-2 font-medium text-gray-700">Accuracy maximale :</label>
         <input
@@ -22,7 +21,6 @@
         />
       </div>
 
-      <!-- Bloc 2 : Feature utilisée + bouton dans la même ligne -->
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div class="flex flex-col w-full">
           <label for="feature_filter" class="mb-2 font-medium text-gray-700">Feature utilisée :</label>
@@ -41,7 +39,6 @@
           </select>
         </div>
 
-        <!-- Bouton "Filtrer" aligné à droite sur la même ligne -->
         <button
           type="submit"
           class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300
@@ -55,13 +52,11 @@
   </div>
 </div>
 
-
-
 <div class="flex items-center justify-center gap-6">
 
   <!-- Bouton Précédent -->
   {% if page > 0 %}
-  <form method="get" action="/" class="m-0">
+  <form method="get" action="/#galerie" class="m-0">
     <input type="hidden" name="page" value="{{ page - 1 }}">
     <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
     <input type="hidden" name="feature_filter" value="{{ request.args.get('feature_filter') }}">
@@ -140,7 +135,7 @@
 
   <!-- Bouton Suivant -->
   {% if page < n_pages-1 %}
-  <form method="get" action="/" class="m-0">
+  <form method="get" action="/#galerie" class="m-0">
     <input type="hidden" name="page" value="{{ page + 1 }}">
     <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
     <input type="hidden" name="feature_filter" value="{{ request.args.get('feature_filter') }}">
@@ -152,7 +147,7 @@
   </form>
 
   
-  <form method="get" action="/" class="m-0">
+  <form method="get" action="/#galerie" class="m-0">
     <input type="hidden" name="page" value="{{ n_pages - 1 }}">
     <input type="hidden" name="max_accuracy" value="{{ request.args.get('max_accuracy', 100) }}">
     <input type="hidden" name="feature_filter" value="{{ request.args.get('feature_filter') }}">
@@ -163,8 +158,6 @@
     </button>
   </form>
   {% endif %}
-
-
 
   {% include "components/add_tree.html" %}
 </div>

@@ -8,26 +8,34 @@ class Tree:
         """
         Initialise un arbre de décision.
 
+        Paramètres :
+        - max_depth (int) : profondeur maximale de l'arbre.
+        - min_samples_split (int) : nombre minimal d'échantillons requis pour effectuer un split.
+
+        Attributs :
         - max_depth : profondeur maximale de l'arbre
         - min_samples_split : nombre minimal d'échantillons requis pour effectuer une division
-        - self.root : racine de l'arbre, initialement vide
-        - self.specific_splits : dictionnaire facultatif pour forcer des splits sur des features données
-        - self.recalculation_nodes : dictionnaire permettant de retenir les nœuds à recalculer
+        - root (TreeNode) : racine de l'arbre (None avant entraînement).
+        - specific_splits (dict) : splits forcés sur certaines features (optionnel).
+        - selected_features (list) : features utilisées pour construire l'arbre.
         """
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.root = None
-        self.specific_splits = {}  # ex: {0: 1.5, 2: 3.2} => impose des seuils sur certaines features
-        # self.recalculation_nodes = {}  # ex: {'path': node} pour recalculer un sous-arbre
-        # self.nodes_by_feature = {}  # ex: {feature_index: [TreeNode, TreeNode, ...]}
+        self.specific_splits = {}  
         self.selected_features = None
 
     def fit(self, X, y, forced_features=None):
         """
-        Point de départ : construction de l'arbre depuis la racine.
-        - X : matrice d'entrée des features (numpy array ou pandas DataFrame)
-        - y : vecteur des classes
-        - forced_features : liste d'indices de features à forcer (ex: [0, 2, 3])
+        Entraîne l'arbre sur les données d'entrée.
+
+        Paramètres :
+        - X (array-like) : matrice des features (n_samples x n_features).
+        - y (array-like) : vecteur des étiquettes.
+        - forced_features (list ou None) : indices des features à forcer pour le split.
+
+        Effets :
+        - Remplit self.root avec la structure de l'arbre construite.
         """
         self.classes_ = np.unique(y)
         n_features = X.shape[1]
@@ -46,11 +54,16 @@ class Tree:
 
     def _build_tree(self, X, y, depth=0, available_features=None):
         """
-        Fonction récursive pour construire l'arbre.
-        - Si la profondeur maximale est atteinte, ou si le nombre d'échantillons est trop faible,
-        ou s'il n'y a qu'une seule classe, on crée une feuille.
-        - Sinon, on cherche le meilleur split (en prenant en compte les splits spécifiques) 
-        et on construit les sous-arbres gauche et droit.
+        Construit récursivement l'arbre de décision.
+
+        Paramètres :
+        - X (np.ndarray) : sous-ensemble des features.
+        - y (np.ndarray) : sous-ensemble des labels.
+        - depth (int) : profondeur actuelle dans l'arbre.
+        - available_features (list) : features encore disponibles pour le split.
+
+        Retour :
+        - TreeNode : un noeud (interne ou feuille).
         """
         n_samples, n_features = X.shape
         num_classes = len(np.unique(y))
@@ -71,17 +84,20 @@ class Tree:
         left = self._build_tree(X[indices_left], y[indices_left], depth + 1, new_features)
         right = self._build_tree(X[~indices_left], y[~indices_left], depth + 1, new_features)
 
-        # # Sauvegarde du nœud pour recalcul éventuel
-        # self.recalculation_nodes[f'depth_{depth}_feature_{best_feat}'] = (X, y)
-
         return TreeNode(best_feat, best_thresh, left, right)
 
 
     def _best_split(self, X, y, features):
         """
-        Trouve le meilleur split en évaluant toutes les features :
-        - Si une feature est dans specific_splits, on ne teste que le seuil imposé.
-        - Sinon, on teste tous les seuils uniques possibles pour cette feature.
+        Détermine le meilleur split en fonction de l'indice de Gini.
+
+        Paramètres :
+        - X (np.ndarray) : matrice des features.
+        - y (np.ndarray) : vecteur des classes.
+        - features (list) : indices des features à considérer.
+
+        Retour :
+        - (int ou None, float ou None) : meilleur feature et seuil associé.
         """
         best_gini = 1.0
         best_feat = None
@@ -104,8 +120,16 @@ class Tree:
 
     def _gini_index(self, X, y, feature_index, threshold):
         """
-        Calcule l'indice de Gini après une séparation donnée (feature, seuil).
-        Sert à mesurer la pureté des sous-groupes.
+        Calcule l'indice de Gini pour un split donné.
+
+        Paramètres :
+        - X (np.ndarray) : matrice des features.
+        - y (np.ndarray) : étiquettes associées.
+        - feature_index (int) : indice de la feature considérée.
+        - threshold (float) : seuil de split.
+
+        Retour :
+        - float : valeur de l'indice de Gini après le split.
         """
         left_mask = X[:, feature_index] < threshold
         right_mask = ~left_mask
@@ -128,8 +152,13 @@ class Tree:
 
     def _majority_class(self, y):
         """
-        Retourne la classe la plus fréquente dans y (majorité),
-        utilisée pour les feuilles.
+        Renvoie la classe majoritaire parmi les labels fournis.
+
+        Paramètres :
+        - y (np.ndarray) : vecteur des classes.
+
+        Retour :
+        - int ou str : classe la plus fréquente.
         """
         values, counts = np.unique(y, return_counts=True)
         return values[np.argmax(counts)]
@@ -137,7 +166,13 @@ class Tree:
 
     def predict(self, X):
         """
-        Prédit la classe pour chaque échantillon X.
+        Prédit la classe de chaque échantillon dans X.
+
+        Paramètres :
+        - X (array-like) : matrice des features (n_samples x n_features).
+
+        Retour :
+        - list : classes prédites pour chaque échantillon.
         """
         X = np.array(X)
         return [self._predict(inputs, self.root) for inputs in X]
@@ -145,8 +180,14 @@ class Tree:
 
     def _predict(self, x, node):
         """
-        Parcours récursif de l'arbre pour une seule ligne x
-        jusqu’à atteindre une feuille.
+        Prédit la classe d'un échantillon unique en parcourant l'arbre.
+
+        Paramètres :
+        - x (np.ndarray) : vecteur de features pour un échantillon.
+        - node (TreeNode) : nœud courant dans l'arbre.
+
+        Retour :
+        - int ou str : classe prédite.
         """
         if node.value is not None:
             return node.value
@@ -157,7 +198,13 @@ class Tree:
 
     def predict_proba(self, X):
         """
-        Retourne la distribution des probabilités pour chaque classe.
+        Donne la distribution des probabilités de classes pour chaque échantillon.
+
+        Paramètres :
+        - X (array-like) : matrice des features.
+
+        Retour :
+        - np.ndarray : tableau (n_samples x n_classes) avec les probabilités.
         """
         X = np.array(X)
         result = []
@@ -168,7 +215,14 @@ class Tree:
 
     def _predict_proba(self, x, node):
         """
-        Renvoie un vecteur de probabilités des classes à partir du nœud donné.
+        Calcule récursivement les probabilités de classe pour un échantillon.
+
+        Paramètres :
+        - x (np.ndarray) : vecteur de features.
+        - node (TreeNode) : nœud courant dans l'arbre.
+
+        Retour :
+        - np.ndarray : vecteur de probabilités (longueur = nb classes).
         """
         if node.value is not None:
             # Une feuille : retourne un vecteur avec 100% pour la classe majoritaire
@@ -184,7 +238,11 @@ class Tree:
 
     def print_tree(self, node=None, depth=0):
         """
-        Affiche récursivement l’arbre en format textuel.
+        Affiche l’arbre de décision de façon textuelle.
+
+        Paramètres :
+        - node (TreeNode ou None) : nœud à afficher (défaut : racine).
+        - depth (int) : niveau de profondeur pour l’indentation.
         """
         if node is None:
             node = self.root
