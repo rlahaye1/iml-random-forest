@@ -1,0 +1,20 @@
+Projet Flask avec Graphviz et Scikit-Learn
+
+## Prérequis
+
+- Python 3.x installé sur votre machine  
+- Node.js et npm installés (pour installer les dépendances JS si besoin)  
+- Graphviz installé sur votre système (le logiciel, pas seulement la bibliothèque Python)
+
+### Installation 
+
+- **Linux (Ubuntu/Debian) :**  
+```bash
+sudo apt-get install graphviz
+
+pip install -r requirements.txt
+
+
+### Lancement de l’application
+
+Lancer le serveur Flask en exécutant python app.py depuis le dossier du projet. Ensuite ouvrir l’adresse http://localhost:5000 dans un navigateur web.
